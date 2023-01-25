@@ -1,0 +1,15 @@
+Source: mathematica
+Section: math
+Priority: optional
+Maintainer: Julien Guillod <julien.guillod@sorbonne-universite.fr>
+Build-Depends: debhelper (>=11~)
+Standards-Version: 4.1.4
+Homepage: http://www.wolfram.com/mathematica/
+
+Package: mathematica
+Architecture: amd64
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Commercial computational software program.
+ Commercial computational software program used in scientific,
+ engineering, and mathematical fields and other areas of technical computing.

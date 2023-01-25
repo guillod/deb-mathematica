@@ -1,0 +1,94 @@
+#!/usr/bin/make -f
+export DESTDIR=$(CURDIR)/debian/mathematica
+# Upstream version of Mathematica (without revision)
+export VERSION=$(shell dpkg-parsechangelog --show-field Version | cut -d'-' -f1)
+# These variables are used by xdg scripts run by the Mathematica installer
+export XDG_DATA_DIRS=$(DESTDIR)/usr/local/share/:$(DESTDIR)/usr/share/
+export XDG_CONFIG_DIRS=$(DESTDIR)/etc/xdg
+
+%:
+	dh $@
+
+override_dh_clean:
+	@rm build -Rf
+	dh_clean
+
+override_dh_install:
+
+	# Creating empty directories used by installer
+	@mkdir -p $(DESTDIR)/usr/share/icons/hicolor/
+	@mkdir -p $(DESTDIR)/usr/share/applications $(DESTDIR)/usr/share/desktop-directories $(DESTDIR)/usr/share/mime/packages
+	@mkdir -p $(DESTDIR)/etc/xdg/menus/applications-merged/
+
+	# Selecting installer and extracting
+	@if [ -f Mathematica_$(VERSION)_BNDL_LINUX.sh ]; then \
+		sh Mathematica_$(VERSION)_BNDL_LINUX.sh --target build --keep -- -help; \
+	elif [ -f Mathematica_$(VERSION)_LINUX.sh ]; then \
+		sh Mathematica_$(VERSION)_LINUX.sh --target build --keep -- -help; \
+	else \
+		echo "Mathematica installer not provided at $(CURDIR)/Mathematica_$(VERSION)_*LINUX.sh"; \
+		exit 1; \
+	fi
+
+	# Running the Mathematica installer
+	@sh build/Unix/Installer/MathInstaller -auto -silent -targetdir=$(DESTDIR)/opt/mathematica -execdir=$(DESTDIR)/usr/bin -wolframscript=n
+	@if [ -f $(DESTDIR)/opt/mathematica/InstallErrors ]; then \
+        echo "Error installing Mathematica"; \
+		exit 1; \
+	fi
+
+	# Extracting wolframscript and adding link
+# Wolframscript binary is already installed by Mathematica installer
+	@ar x $(DESTDIR)/opt/mathematica/SystemFiles/Installation/wolframscript_*_amd64.deb data.tar.xz --output build/
+	@tar -xf build/data.tar.xz -C $(DESTDIR)/usr/share/ --strip=3 ./usr/share/
+	@dh_link /opt/mathematica/Executables/wolframscript /usr/bin/wolframscript
+
+	# Correcting generated links
+	@for l in `find $(DESTDIR) -type l`; do \
+		link=`readlink $${l}`; \
+		if echo "$${link}" | grep -q "$(DESTDIR)"; then \
+			name=$${l#$(DESTDIR)}; \
+			target=$${link#$(DESTDIR)}; \
+			echo "  Correcting $${name}"; \
+			echo "$${target} $${name}"; \
+			dh_link $${target} $${name}; \
+		fi \
+	done
+
+	# Correcting generated desktop files
+	@sed -Ei "s|$(DESTDIR)||g" $(DESTDIR)/opt/mathematica/SystemFiles/Installation/*.desktop
+	@sed -Ei "s|$(DESTDIR)||g" $(DESTDIR)/usr/share/applications/*.desktop
+
+	# Copying man pages
+# Not done by installer since /usr is hardcoded in it
+	@dh_install debian/mathematica/opt/mathematica/SystemFiles/SystemDocumentation/Unix/*.1 /usr/share/man/man1/
+
+	# Copying mathpass if provided
+	@if [ -f mathpass ]; then \
+		dh_install mathpass /opt/mathematica/Configuration/Licensing/; \
+    fi
+
+	# Deleting mime and desktop caches
+	@find $(DESTDIR)/usr/share/mime/ -type f -not -path */packages/* -delete
+	@find $(DESTDIR)/usr/share/mime/ -type f -not -path */packages/* -delete
+	@find $(DESTDIR)/usr/share/mime/ -type d -empty -delete
+	@find $(DESTDIR)/usr/share/applications/ -type f -not -name "*.desktop" -delete
+	
+	# Deleting /etc created by applications-merged
+	@rm -Rf $(DESTDIR)/etc
+
+	# Deleting InstallerLog
+	@ rm $(DESTDIR)/opt/mathematica/InstallerLog
+
+	# Deleting build directory
+	@rm build -Rf
+
+# Do no strip and use shlibs
+override_dh_strip_nondeterminism:
+	
+override_dh_strip:
+	
+override_dh_makeshlibs:
+	
+override_dh_shlibdeps:
+	

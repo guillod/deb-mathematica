@@ -1,0 +1,8 @@
+Mathematica_*.sh
+mathpass
+debhelper-build-stamp
+*.substvars
+build/
+debian/files
+debian/mathematica
+debian/.debhelper
