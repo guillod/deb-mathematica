@@ -21,7 +21,7 @@ Inspired by [Mathematica Arch Linux PKGBUILD](https://aur.archlinux.org/packages
 
 1. Define the desired version:
 
-        export VERSION=13.1.0
+        export VERSION=13.2.0
 
 2. Clone the git repository containing the packages rules in an empty directory:
 
