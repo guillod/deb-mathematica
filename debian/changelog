@@ -1,3 +1,9 @@
+mathematica (13.1.0) unstable; urgency=medium
+
+  * Upstream version 13.1.0 
+
+ -- Julien Guillod <julien.guillod@sorbonne-universite.fr>  Wed, 25 Jan 2023 09:24:24 +0100
+
 mathematica (13.0.1) unstable; urgency=low
 
   * Upstream version 13.0.1
